@@ -64,8 +64,6 @@ body.admin .cell.on .del{display:block}
 <div id="up" hidden><main>
   <h1>교직 그래프 제출</h1>
   <p>그래프를 가로로 찍어 올려 주세요.</p>
-  <label for="name">이름 또는 사다리 번호</label>
-  <input id="name" type="text" maxlength="12" autocomplete="off">
   <label class="btn" id="pick" for="file">사진 찍기 / 고르기</label>
   <input id="file" type="file" accept="image/*">
   <img id="prev" alt="올린 사진 미리보기" hidden>
@@ -117,7 +115,7 @@ if(!isWall){
       const data=c.toDataURL('image/jpeg',.8); URL.revokeObjectURL(img.src);
       prev.src=data; prev.hidden=false; say('올리는 중…');
       fetch(API,{method:'POST',credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({data:data,name:document.getElementById('name').value.trim(),token:token})})
+        body:JSON.stringify({data:data,name:'',token:token})})
        .then(r=>r.json()).then(j=>{ if(!j.ok) throw new Error(j.error||'error');
           busy(false); pick.textContent='다시 올리기'; say('제출 완료! 화면을 확인해 보세요.','ok'); })
        .catch(e=>{busy(false); say('올리지 못했습니다. 다시 시도해 주세요.','no');});
@@ -134,7 +132,7 @@ if(!isWall){
   for(let i=0;i<20;i++){const c=document.createElement('div');c.className='cell';c.innerHTML='<span>'+(i+1)+'</span>';wall.appendChild(c);}
   function openBig(i){
     if(!pics[i]) return; cur=i; big.firstElementChild.src=pics[i].data;
-    cap.textContent=pics[i].n&&pics[i].n!=='무명'?pics[i].n+' 선생님':(i+1)+'번째 그래프';
+    cap.textContent=(i+1)+'번 그래프';
     const sm=document.createElement('small'); sm.textContent='← → 다음 사진 · Esc 닫기'; cap.append(sm);
     big.style.display='grid';
   }
@@ -144,8 +142,8 @@ if(!isWall){
     if(e.key==='Escape') big.onclick(); if(e.key==='ArrowRight') step(1); if(e.key==='ArrowLeft') step(-1); });
   function fill(i,item,data){
     const c=wall.children[i]; c.innerHTML=''; c.classList.add('on');
-    const im=new Image(); im.src=data; im.alt=(item.n||'')+' 선생님의 교직 그래프'; c.appendChild(im);
-    if(item.n&&item.n!=='무명'){const b=document.createElement('b'); b.textContent=item.n; c.appendChild(b);}
+    const im=new Image(); im.src=data; im.alt=(i+1)+'번 교직 그래프'; c.appendChild(im);
+    const b=document.createElement('b'); b.textContent=i+1; c.appendChild(b);
     const x=document.createElement('button'); x.type='button'; x.className='del'; x.textContent='✕'; x.setAttribute('aria-label',(i+1)+'번 사진 지우기');
     x.onclick=e=>{ e.stopPropagation(); remove(i,item); }; c.appendChild(x);
     pics[i]={data:data,n:item.n}; c.onclick=()=>openBig(i);
@@ -170,8 +168,7 @@ if(!isWall){
       .catch(err=>{ pwm.textContent=err.message==='error'?'확인하지 못했습니다.':err.message; pwi.value=''; pwi.focus(); });
   });
   function remove(i,item){
-    const who=item.n&&item.n!=='무명'?item.n+' 선생님의 사진':(i+1)+'번 칸의 사진';
-    if(!confirm(who+'을 지울까요?')) return;
+    if(!confirm((i+1)+'번 그래프를 지울까요?')) return;
     post({action:'delete',key:adminKey,id:item.id}).then(refresh).catch(e=>alert('지우지 못했습니다. '+(e.message||'')));
   }
   function refresh(){
