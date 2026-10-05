@@ -46,6 +46,14 @@ h1{font-family:'Do Hyeon',sans-serif;font-weight:400;margin:0}
 body.admin #adm{background:var(--down);border-color:var(--down);color:#fff}
 .del{display:none;position:absolute;top:6px;right:6px;width:2.1em;height:2.1em;border-radius:50%;border:2px solid #fff;background:var(--down);color:#fff;font-size:clamp(.9rem,1.2vw,1.3rem);font-weight:700;cursor:pointer;z-index:2}
 body.admin .cell.on .del{display:block}
+#pw{border:2px solid var(--ink);border-radius:14px;padding:20px;width:min(90vw,340px);font:inherit;color:var(--ink)}
+#pw::backdrop{background:rgba(20,38,61,.5)}
+#pw label{display:block;font-family:'Do Hyeon',sans-serif;font-size:1.3rem;margin-bottom:.5em}
+#pwi{width:100%;font:inherit;font-size:1.3rem;padding:.5em;border:2px solid var(--ink);border-radius:10px;letter-spacing:.2em}
+#pwm{min-height:1.4em;margin:.4em 0;color:var(--down);font-size:.95rem}
+#pw .row{display:flex;gap:8px;justify-content:flex-end}
+#pw button{font:inherit;font-family:'Do Hyeon',sans-serif;font-size:1.1rem;padding:.35em 1em;border:2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink);cursor:pointer}
+#pwo{background:var(--mark)!important}
 #big{position:fixed;inset:0;background:rgba(20,38,61,.9);display:none;place-items:center;cursor:zoom-out;padding:3vh}
 #big img{max-width:100%;max-height:88vh;border-radius:10px;background:#fff}
 #cap{position:fixed;left:0;right:0;bottom:2vh;text-align:center;color:#fff;font-family:'Do Hyeon',sans-serif;font-size:clamp(1.2rem,2.2vw,2.2rem)}
@@ -73,6 +81,14 @@ body.admin .cell.on .del{display:block}
     <button id="adm" type="button">관리</button>
   </aside>
   <section id="wall" aria-label="제출된 사진 20칸"></section>
+  <dialog id="pw">
+    <form method="dialog">
+      <label for="pwi">관리자 비밀번호</label>
+      <input id="pwi" type="password" autocomplete="off" inputmode="text">
+      <div id="pwm" aria-live="polite"></div>
+      <div class="row"><button type="button" id="pwc">취소</button><button type="submit" id="pwo">확인</button></div>
+    </form>
+  </dialog>
   <div id="big"><img alt="크게 보기"><div id="cap"></div></div>
 </div>
 
@@ -143,10 +159,16 @@ if(!isWall){
     .then(r=>r.json()).then(j=>{ if(!j.ok) throw new Error(j.error||'error'); return j; });
   document.getElementById('adm').onclick=()=>{
     if(adminKey){ adminKey=''; document.body.classList.remove('admin'); document.getElementById('adm').textContent='관리'; return; }
-    const k=prompt('관리자 비밀번호'); if(!k) return;
-    post({action:'check',key:k}).then(()=>{ adminKey=k; document.body.classList.add('admin'); document.getElementById('adm').textContent='관리 끝내기'; })
-      .catch(e=>alert(e.message==='error'?'확인하지 못했습니다.':e.message));
+    pwi.value=''; pwm.textContent=''; pw.showModal(); pwi.focus();
   };
+  const pw=document.getElementById('pw'),pwi=document.getElementById('pwi'),pwm=document.getElementById('pwm');
+  document.getElementById('pwc').onclick=()=>pw.close();
+  pw.querySelector('form').addEventListener('submit',e=>{
+    e.preventDefault(); const k=pwi.value; if(!k) return;
+    pwm.textContent='확인하는 중…';
+    post({action:'check',key:k}).then(()=>{ adminKey=k; pwi.value=''; pw.close(); document.body.classList.add('admin'); document.getElementById('adm').textContent='관리 끝내기'; })
+      .catch(err=>{ pwm.textContent=err.message==='error'?'확인하지 못했습니다.':err.message; pwi.value=''; pwi.focus(); });
+  });
   function remove(i,item){
     const who=item.n&&item.n!=='무명'?item.n+' 선생님의 사진':(i+1)+'번 칸의 사진';
     if(!confirm(who+'을 지울까요?')) return;
